@@ -1,5 +1,5 @@
-import VoiceController from "./components/VoiceController";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <VoiceController />;
+  redirect("/dashboard");
 }
