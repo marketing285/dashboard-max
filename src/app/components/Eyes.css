@@ -1,0 +1,101 @@
+.eyes {
+  position: absolute;
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  scale: 0.75;
+}
+
+.eye {
+  width: 72px;
+  height: 96px;
+  background: #fff;
+  border-radius: 999px;
+  position: relative;
+  overflow: visible;
+  transition:
+    height 0.35s cubic-bezier(.22,1,.36,1),
+    width  0.35s cubic-bezier(.22,1,.36,1);
+}
+
+/* pálpebra superior — sai 14px pra fora nos lados e no topo */
+.eye::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  right: -14px;
+  height: 0;
+  background: #0c0c0c;
+  border-radius: 999px 999px 0 0;
+  z-index: 2;
+}
+
+@keyframes blink-lid {
+  0%   { height: 0; }
+  30%  { height: calc(100% + 14px); }
+  60%  { height: calc(100% + 14px); }
+  100% { height: 0; }
+}
+
+.eye.blink::before {
+  animation: blink-lid 0.28s cubic-bezier(.4,0,.2,1) forwards;
+}
+
+/* estados */
+.eye.listening { height: 88px;  width: 68px; }
+.eye.thinking  { height: 30px;  width: 72px; }
+.eye.speaking  { height: 102px; width: 76px; }
+.eye.squint    { height: 38px; }
+
+/* reflexo */
+.shine {
+  position: absolute;
+  top: 11px; left: 50%;
+  transform: translateX(-55%);
+  width: 20px; height: 10px;
+  background: rgba(255,255,255,0.45);
+  border-radius: 50%;
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+@keyframes breathe {
+  0%,100% { transform: scaleY(1); }
+  50%      { transform: scaleY(0.95); }
+}
+.eye.idle { animation: breathe 3.5s ease-in-out infinite; }
+
+@keyframes wiggle {
+  0%,100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-1.2deg); }
+  75%      { transform: rotate(1.2deg); }
+}
+.eye.listening { animation: wiggle 1.8s ease-in-out infinite; }
+
+@keyframes sway {
+  0%,100% { transform: translateX(0); }
+  50%      { transform: translateX(5px); }
+}
+.eye.thinking { animation: sway 2.2s ease-in-out infinite; }
+
+@keyframes bounce {
+  0%,100% { transform: scaleY(1); }
+  40%      { transform: scaleY(1.05); }
+  60%      { transform: scaleY(0.97); }
+}
+.eye.speaking { animation: bounce 0.5s ease-in-out infinite; }
+
+/* responsivo — escala os olhos junto com o orb */
+@media (max-width: 1022px) {
+  .eyes { scale: 0.6; }
+}
+@media (max-width: 600px) {
+  .eyes { scale: 0.45; }
+}
+@media (max-width: 400px) {
+  .eyes { scale: 0.35; }
+}
