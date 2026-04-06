@@ -7,8 +7,8 @@ RUN npm ci
 
 COPY . .
 
-ARG MAX_API_URL=http://localhost:3000
-ENV MAX_API_URL=$MAX_API_URL
+ARG NEXT_PUBLIC_API_URL=https://max.vendai.pro
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm run build
 

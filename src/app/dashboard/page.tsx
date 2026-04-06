@@ -85,23 +85,25 @@ export default function Dashboard() {
   const [briefing,  setBriefing]  = useState<Briefing | null>(null);
   const [briefingLoading, setBriefingLoading] = useState(false);
 
+  const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/controller/context");
+      const r = await fetch(`${API}/api/controller/context`);
       if (!r.ok) return;
       setCtx(await r.json());
       setUpdatedAt(new Date());
     } finally { setLoading(false); }
-  }, []);
+  }, [API]);
 
   const loadBriefing = useCallback(async () => {
     setBriefingLoading(true);
     try {
-      const r = await fetch("/api/controller/briefing");
+      const r = await fetch(`${API}/api/controller/briefing`);
       if (!r.ok) return;
       setBriefing(await r.json());
     } finally { setBriefingLoading(false); }
-  }, []);
+  }, [API]);
 
   useEffect(() => {
     document.body.classList.add("page-dashboard");
