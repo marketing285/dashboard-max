@@ -19,6 +19,7 @@ interface MonthMetrics {
   month: string; label: string; totalPlanned: number; delivered: number;
   inApproval: number; withRevision: number; pending: number;
   completionPct: number; avgDailyProduction: number;
+  uniqueTasks?: number; uniqueDeliveredTasks?: number;
 }
 interface Ctx {
   tasks: NocoTask[]; clients: Client[];
@@ -995,11 +996,19 @@ function ProdCard({ title, color, current, history, onClick }: {
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
           <Ring pct={bar} color={barColor} size={88} />
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, width:"100%" }}>
-            <MiniStat label="Entregues" value={current.delivered}    color="#22C55E" />
-            <MiniStat label="Total"     value={current.totalPlanned} color={color} />
-            <MiniStat label="Aprovação" value={current.inApproval}   color="#FBBF24" />
-            <MiniStat label="Revisão"   value={current.withRevision} color="#F97316" />
+            <MiniStat label="Artes entregues" value={current.delivered}    color="#22C55E" />
+            <MiniStat label="Total artes"     value={current.totalPlanned} color={color} />
+            <MiniStat label="Aprovação"       value={current.inApproval}   color="#FBBF24" />
+            <MiniStat label="Revisão"         value={current.withRevision} color="#F97316" />
           </div>
+          {(current.uniqueTasks != null) && (
+            <div style={{ marginTop:8, padding:"6px 8px", background:"rgba(255,255,255,0.03)",
+              borderRadius:8, fontSize:12, color:"#4A5060", textAlign:"center" }}>
+              {current.uniqueDeliveredTasks ?? 0} tarefas únicas entregues
+              <span style={{ margin:"0 6px", opacity:0.4 }}>·</span>
+              {current.uniqueTasks} total
+            </div>
+          )}
         </div>
         <div>
           <div style={{ fontSize:13, color:"#4A5060", marginBottom:10 }}>{current.label}</div>
@@ -1032,7 +1041,7 @@ function ProdCard({ title, color, current, history, onClick }: {
           </div>
           <div style={{ marginTop:14, display:"flex", justifyContent:"space-between",
             fontSize:13, color:"#4A5060" }}>
-            <span>Média/dia: <b style={{ color:"#8B909E" }}>{current.avgDailyProduction}</b></span>
+            <span>Artes/dia: <b style={{ color:"#8B909E" }}>{current.avgDailyProduction}</b></span>
             <span>Pendentes: <b style={{ color:current.pending>0?"#F59E0B":"#4A5060" }}>{current.pending}</b></span>
           </div>
         </div>
