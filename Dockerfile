@@ -23,4 +23,4 @@ COPY --from=builder /app/out ./out
 
 EXPOSE 3000
 
-CMD ["serve", "-s", "out", "-l", "3000"]
+CMD ["sh", "-c", "serve -s out -l ${PORT:-3000}"]
