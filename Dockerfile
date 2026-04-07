@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -12,8 +12,15 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm run build
 
-EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
+# ── Runner ────────────────────────────────────────────────────────────────────
+FROM node:20-alpine
 
-CMD ["npm", "start"]
+WORKDIR /app
+
+RUN npm install -g serve
+
+COPY --from=builder /app/out ./out
+
+EXPOSE 3000
+
+CMD ["serve", "-s", "out", "-l", "3000"]
