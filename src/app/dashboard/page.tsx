@@ -85,7 +85,7 @@ export default function Dashboard() {
   const [briefing,  setBriefing]  = useState<Briefing | null>(null);
   const [briefingLoading, setBriefingLoading] = useState(false);
 
-  const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const API = "https://max.vendai.pro";
 
   const load = useCallback(async () => {
     try {
