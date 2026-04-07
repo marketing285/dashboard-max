@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # bust cache to force rebuild when code changes
-ARG CACHEBUST=1
+ARG CACHEBUST=2
 
 COPY package*.json ./
 RUN npm ci
