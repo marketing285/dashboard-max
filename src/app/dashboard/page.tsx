@@ -80,6 +80,7 @@ export default function Dashboard() {
   const [ctx,       setCtx]       = useState<Ctx | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [loading,   setLoading]   = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeArea,setActiveArea]= useState<string>("Todas");
   const [drawer,    setDrawer]    = useState<AreaKey | null>(null);
   const [briefing,  setBriefing]  = useState<Briefing | null>(null);
@@ -89,10 +90,14 @@ export default function Dashboard() {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch(`${API}/api/controller/context`);
-      if (!r.ok) return;
-      setCtx(await r.json());
+      const r = await fetch(`${API}/api/controller/context`, { cache: "no-store" });
+      if (!r.ok) { setLoadError(`Erro ${r.status} do servidor`); return; }
+      const data = await r.json();
+      setCtx(data);
       setUpdatedAt(new Date());
+      setLoadError(null);
+    } catch (e: any) {
+      setLoadError(e?.message ?? "Falha de rede");
     } finally { setLoading(false); }
   }, [API]);
 
@@ -202,8 +207,18 @@ export default function Dashboard() {
         ))}
 
         {loading ? (
-          <div style={{ textAlign:"center", color:"#4A5060", padding:"100px 0", fontSize:16 }}>
+          <div style={{ textAlign:"center", color:"#8B95A5", padding:"100px 0", fontSize:18, fontWeight:500 }}>
             Carregando dados operacionais...
+          </div>
+        ) : loadError ? (
+          <div style={{ textAlign:"center", padding:"80px 0" }}>
+            <div style={{ color:"#EF4444", fontSize:16, marginBottom:16 }}>
+              Erro ao carregar dados: {loadError}
+            </div>
+            <button onClick={load} style={{ background:"rgba(74,158,255,0.12)", border:"1px solid rgba(74,158,255,0.3)",
+              color:"#4A9EFF", fontSize:14, padding:"8px 20px", borderRadius:20, cursor:"pointer" }}>
+              Tentar novamente
+            </button>
           </div>
         ) : (
           <>
