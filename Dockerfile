@@ -7,10 +7,10 @@ RUN npm ci
 
 COPY . .
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+# URL do backend MAX — hardcoded como default seguro
+ENV NEXT_PUBLIC_API_URL=https://max.vendai.pro
 
-RUN echo "Building with NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}" && npm run build
+RUN npm run build
 
 # ── Runner ────────────────────────────────────────────────────────────────────
 FROM node:20-alpine
