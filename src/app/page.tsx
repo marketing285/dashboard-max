@@ -245,8 +245,17 @@ export default function Dashboard() {
                 const apr      = bTasks.filter(t => t.status?.includes("Aprovação") || t.status?.includes("Revisão Interna")).length;
                 const allArea  = tasks.filter(t => t.area === area);
                 const fechadas = allArea.filter(t => CLOSED.includes(t.status)).length;
-                const totalAll = allArea.length;
-                const pctFech  = totalAll > 0 ? Math.round((fechadas / totalAll) * 100) : 0;
+
+                // Design e Edição: usar métricas do depósito (tasks entregues saem da lista)
+                let pctFech: number;
+                if (area === "Design" && dmCurrent) {
+                  pctFech = dmCurrent.completionPct;
+                } else if (area === "Edição" && emCurrent) {
+                  pctFech = emCurrent.completionPct;
+                } else {
+                  const totalAll = allArea.length;
+                  pctFech = totalAll > 0 ? Math.round((fechadas / totalAll) * 100) : 0;
+                }
 
                 const statusCounts: Record<string, number> = {};
                 for (const t of bTasks) statusCounts[t.status] = (statusCounts[t.status] ?? 0) + 1;
