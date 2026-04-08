@@ -181,13 +181,20 @@ export default function Dashboard() {
 
         {/* ── Header ── */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:32 }}>
-          <div>
-            <div style={{ fontSize:13, letterSpacing:"0.2em", textTransform:"uppercase", color:"#4A9EFF", marginBottom:5 }}>
-              Grupo VENDA · Operations
+          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+            <img
+              src="https://lnzxjtzquxhxdlqqenjo.supabase.co/storage/v1/object/public/media/Grupo%20venda.png"
+              alt="Grupo Venda"
+              style={{ height:48, objectFit:"contain" }}
+            />
+            <div>
+              <div style={{ fontSize:13, letterSpacing:"0.2em", textTransform:"uppercase", color:"#4A9EFF", marginBottom:5 }}>
+                Grupo VENDA · Operations
+              </div>
+              <h1 style={{ fontSize:30, fontWeight:800, letterSpacing:"-0.02em", margin:0, color:"#fff" }}>
+                Painel de Controle
+              </h1>
             </div>
-            <h1 style={{ fontSize:30, fontWeight:800, letterSpacing:"-0.02em", margin:0, color:"#fff" }}>
-              Painel de Controle
-            </h1>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             {updatedAt && <span style={{ fontSize:14, color:"#4A5060" }}>{updatedAt.toLocaleTimeString("pt-BR")}</span>}
