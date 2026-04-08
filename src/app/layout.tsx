@@ -4,8 +4,8 @@ import "./globals.css";
 const FAVICON = "https://lnzxjtzquxhxdlqqenjo.supabase.co/storage/v1/object/public/media/Fivecon%20(1).png";
 
 export const metadata: Metadata = {
-  title: "MAX — Grupo Venda",
-  description: "Monitor Ativo de Operações",
+  title: "Dashboard — Grupo Venda",
+  description: "Painel de Controle Operacional",
   icons: {
     icon: FAVICON,
     shortcut: FAVICON,
