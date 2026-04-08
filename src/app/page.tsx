@@ -223,6 +223,44 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
+            {/* ── Banner de Status Operacional (quando briefing carregado) ── */}
+            {briefing && (
+              <div style={{
+                display:"flex", alignItems:"center", gap:16, marginBottom:20,
+                background: `${briefing.statusColor}10`,
+                border: `1px solid ${briefing.statusColor}30`,
+                borderLeft: `4px solid ${briefing.statusColor}`,
+                borderRadius:12, padding:"14px 20px",
+                animation: briefing.status === "Situação Crítica" ? "pulse 3s infinite" : "none",
+              }}>
+                <ScoreRing score={briefing.score} color={briefing.statusColor} size={52} />
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:briefing.statusColor,
+                      textTransform:"uppercase", letterSpacing:"0.1em" }}>{briefing.status}</span>
+                    <span style={{ fontSize:11, color:"#3A4055" }}>
+                      MAX · {new Date(briefing.generatedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}
+                    </span>
+                  </div>
+                  <p style={{ margin:0, fontSize:14, color:"#C5CAD8", lineHeight:1.4 }}>{briefing.summary}</p>
+                </div>
+                <button onClick={loadBriefing} disabled={briefingLoading}
+                  style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
+                    color: briefingLoading?"#2A3040":"#6B7280", fontSize:11, padding:"4px 10px",
+                    borderRadius:16, cursor: briefingLoading?"not-allowed":"pointer", flexShrink:0 }}>
+                  {briefingLoading ? "..." : "↻"}
+                </button>
+              </div>
+            )}
+            {!briefing && briefingLoading && (
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20,
+                background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)",
+                borderRadius:12, padding:"14px 20px", color:"#3A4055", fontSize:13 }}>
+                <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>
+                MAX analisando a operação...
+              </div>
+            )}
+
             {/* ── KPI Strip ── */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12, marginBottom:28 }}>
               <KPI label="Tasks abertas"     value={abertas.length}   color="#4A9EFF" />
@@ -232,7 +270,7 @@ export default function Dashboard() {
               <KPI label="Clientes ativos"   value={ativos.length}    color="#2DD4A0" />
             </div>
 
-            {/* ── MAX Briefing ── */}
+            {/* ── MAX Briefing Completo ── */}
             <BriefingCard briefing={briefing} loading={briefingLoading} onRefresh={loadBriefing} />
 
             {/* ── Board Cards ── */}
@@ -477,6 +515,7 @@ export default function Dashboard() {
 
         <style>{`
           @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+          @keyframes spin{to{transform:rotate(360deg)}}
           @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
           *{box-sizing:border-box}body{margin:0}
           ::-webkit-scrollbar{width:5px}
