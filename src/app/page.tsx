@@ -169,7 +169,6 @@ export default function Dashboard() {
           area={drawer}
           tasks={tasks}
           clients={clients}
-          designMetrics={dm}
           edicaoMetrics={em}
           onClose={() => setDrawer(null)}
         />
@@ -669,9 +668,9 @@ function BriefingCard({ briefing, loading, onRefresh }: {
 
 // ─── Detail Drawer ────────────────────────────────────────────────────────────
 
-function DetailDrawer({ area, tasks, clients, designMetrics, edicaoMetrics, onClose }: {
+function DetailDrawer({ area, tasks, clients, edicaoMetrics, onClose }: {
   area: AreaKey; tasks: NocoTask[]; clients: Client[];
-  designMetrics: MonthMetrics[]; edicaoMetrics: MonthMetrics[];
+  edicaoMetrics: MonthMetrics[];
   onClose: () => void;
 }) {
   const { main, label, gestor } = BOARD[area];
@@ -682,7 +681,7 @@ function DetailDrawer({ area, tasks, clients, designMetrics, edicaoMetrics, onCl
   const atencao   = abertas.filter(t => t.sla?.includes("Atenção"));
   const noCliente = abertas.filter(t => t.sla?.includes("No Prazo") || (!t.sla || t.sla==="—"));
 
-  const metrics = area === "Design" ? designMetrics : area === "Edição" ? edicaoMetrics : [];
+  const metrics = area === "Edição" ? edicaoMetrics : [];
   const mCurrent = [...metrics].sort((a,b) => b.month.localeCompare(a.month))[0];
 
   // Group tasks by status
