@@ -34,7 +34,7 @@ interface Briefing {
   generatedAt: string;
 }
 
-type AreaKey = "BU1" | "Design" | "Edição";
+type AreaKey = "BU1" | "BU2" | "Design" | "Edição";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -56,6 +56,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 const BOARD: Record<AreaKey, { main: string; bg: string; label: string; gestor: string }> = {
   BU1:    { main:"#4A9EFF", bg:"rgba(74,158,255,0.08)",   label:"BU1",    gestor:"Christian" },
+  BU2:    { main:"#2DD4A0", bg:"rgba(45,212,160,0.08)",   label:"BU2",    gestor:"" },
   Design: { main:"#A78BFA", bg:"rgba(167,139,250,0.08)",  label:"Design", gestor:"Bruna Benevides" },
   Edição: { main:"#F59E0B", bg:"rgba(245,158,11,0.08)",   label:"Edição", gestor:"Ana Laura" },
 };
@@ -148,7 +149,7 @@ export default function Dashboard() {
   const dmCurrent = [...dm].sort((a,b) => b.month.localeCompare(a.month))[0];
   const emCurrent = [...em].sort((a,b) => b.month.localeCompare(a.month))[0];
 
-  const areas     = ["Todas","BU1","Design","Edição"];
+  const areas     = ["Todas","BU1","BU2","Design","Edição"];
   const tasksVis  = activeArea === "Todas" ? abertas : abertas.filter(t => t.area === activeArea);
 
   return (
@@ -280,8 +281,8 @@ export default function Dashboard() {
             <BriefingCard briefing={briefing} loading={briefingLoading} onRefresh={loadBriefing} />
 
             {/* ── Board Cards ── */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16, marginBottom:28 }}>
-              {(["BU1","Design","Edição"] as AreaKey[]).map(area => {
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:28 }}>
+              {(["BU1","BU2","Design","Edição"] as AreaKey[]).map(area => {
                 const bTasks   = abertas.filter(t => t.area === area);
                 const total    = bTasks.length;
                 const late     = bTasks.filter(t => t.sla?.includes("Atrasado")).length;
@@ -489,7 +490,7 @@ export default function Dashboard() {
                       textTransform:"uppercase", color:"#4A5060" }}>Clientes</div>
                     <span style={{ fontSize:14, fontWeight:700, color:"#2DD4A0" }}>{ativos.length} ativos</span>
                   </div>
-                  {(["BU1"] as const).map(bu => {
+                  {(["BU1","BU2"] as const).map(bu => {
                     const lista = ativos.filter(c => c.bu === bu);
                     if (!lista.length) return null;
                     return (
@@ -537,7 +538,7 @@ export default function Dashboard() {
 
 const SEVERITY_COLOR = { alta: "#EF4444", media: "#F59E0B", baixa: "#4A9EFF" };
 const AREA_COLOR: Record<string, string> = {
-  BU1: "#4A9EFF", Design: "#A78BFA", "Edição": "#F59E0B",
+  BU1: "#4A9EFF", BU2: "#2DD4A0", Design: "#A78BFA", "Edição": "#F59E0B",
 };
 
 function ScoreRing({ score, color, size = 56 }: { score: number; color: string; size?: number }) {
@@ -693,7 +694,7 @@ function DetailDrawer({ area, tasks, clients, designMetrics, edicaoMetrics, onCl
 
   // BU-specific: tasks by client
   const byClient: Record<string, NocoTask[]> = {};
-  if (area === "BU1") {
+  if (area === "BU1" || area === "BU2") {
     for (const t of abertas) {
       const key = t.client || "—";
       if (!byClient[key]) byClient[key] = [];
@@ -786,7 +787,7 @@ function DetailDrawer({ area, tasks, clients, designMetrics, edicaoMetrics, onCl
         )}
 
         {/* Tasks by client (BU only) */}
-        {area === "BU1" && Object.keys(byClient).length > 0 && (
+        {(area === "BU1" || area === "BU2") && Object.keys(byClient).length > 0 && (
           <Section title="Tasks por Cliente" color={main}>
             {Object.entries(byClient)
               .sort((a,b) => b[1].length - a[1].length)
