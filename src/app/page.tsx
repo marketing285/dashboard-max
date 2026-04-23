@@ -56,7 +56,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 const BOARD: Record<AreaKey, { main: string; bg: string; label: string; gestor: string }> = {
   BU1:    { main:"#4A9EFF", bg:"rgba(74,158,255,0.08)",   label:"BU1",    gestor:"Christian" },
-  BU2:    { main:"#2DD4A0", bg:"rgba(45,212,160,0.08)",   label:"BU2",    gestor:"" },
+  BU2:    { main:"#2DD4A0", bg:"rgba(45,212,160,0.08)",   label:"BU2",    gestor:"Armando Cavazana" },
   Design: { main:"#A78BFA", bg:"rgba(167,139,250,0.08)",  label:"Design", gestor:"Bruna Benevides" },
   Edição: { main:"#F59E0B", bg:"rgba(245,158,11,0.08)",   label:"Edição", gestor:"Ana Laura" },
 };
