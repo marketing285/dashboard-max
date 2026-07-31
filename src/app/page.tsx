@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface NocoTask {
-  id: number; title: string; area: string; client: string;
+  id: string; title: string; area: string; client: string;
   status: string; sla: string; deadline: string;
   daysLeft: number | null; responsible: string; priority: string;
 }
@@ -34,7 +34,7 @@ interface Briefing {
   generatedAt: string;
 }
 
-type AreaKey = "BU1" | "BU2" | "Design" | "Edição";
+type AreaKey = "BU1" | "BU2" | "BU3" | "BU4" | "Design" | "Edição";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -55,16 +55,18 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const BOARD: Record<AreaKey, { main: string; bg: string; label: string; gestor: string }> = {
-  BU1:    { main:"#4A9EFF", bg:"rgba(74,158,255,0.08)",   label:"BU1",    gestor:"Christian" },
+  BU1:    { main:"#4A9EFF", bg:"rgba(74,158,255,0.08)",   label:"BU1",    gestor:"Christian Castilhoni" },
   BU2:    { main:"#2DD4A0", bg:"rgba(45,212,160,0.08)",   label:"BU2",    gestor:"Armando Cavazana" },
-  Design: { main:"#A78BFA", bg:"rgba(167,139,250,0.08)",  label:"BU3",    gestor:"Bruna Benevides" },
-  Edição: { main:"#F59E0B", bg:"rgba(245,158,11,0.08)",   label:"Edição", gestor:"Ana Laura" },
+  BU3:    { main:"#F472B6", bg:"rgba(244,114,182,0.08)",  label:"BU3",    gestor:"Bruna Benevides" },
+  BU4:    { main:"#8B5CF6", bg:"rgba(139,92,246,0.08)",   label:"BU4",    gestor:"Bruno Zanardo" },
+  Design: { main:"#A78BFA", bg:"rgba(167,139,250,0.08)",  label:"Design", gestor:"Bruna Benevides" },
+  Edição: { main:"#F59E0B", bg:"rgba(245,158,11,0.08)",   label:"Edição", gestor:"Samantha" },
 };
 
 const AGENTS = [
   { name:"MAX",              role:"Monitor Ativo de Operações",    active:true,  color:"#4A9EFF" },
   { name:"design-sync",     role:"Sincronização Design (Bruna)",  active:true,  color:"#A78BFA" },
-  { name:"video-archive",   role:"Sincronização Edição (Ana)",    active:true,  color:"#F59E0B" },
+  { name:"video-archive",   role:"Sincronização Edição (Samantha)", active:true,  color:"#F59E0B" },
   { name:"CS Supremo",      role:"Triagem e atendimento",         active:false, color:"#FF6B4A" },
   { name:"Agente CMO",      role:"Suporte estratégico ao CMO",    active:false, color:"#2DD4A0" },
   { name:"GPIA1",           role:"Gestão de projetos BU1",        active:false, color:"#4A9EFF" },
@@ -146,10 +148,11 @@ export default function Dashboard() {
 
   const dm        = ctx?.designMetrics ?? [];
   const em        = ctx?.edicaoMetrics ?? [];
-  const dmCurrent = [...dm].sort((a,b) => b.month.localeCompare(a.month))[0];
-  const emCurrent = [...em].sort((a,b) => b.month.localeCompare(a.month))[0];
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const dmCurrent = [...dm].filter(m => m.month <= thisMonth).sort((a,b) => b.month.localeCompare(a.month))[0];
+  const emCurrent = [...em].filter(m => m.month <= thisMonth).sort((a,b) => b.month.localeCompare(a.month))[0];
 
-  const areas     = ["Todas","BU1","BU2","Design","Edição"];
+  const areas     = ["Todas","BU1","BU2","BU3","BU4","Design","Edição"];
   const tasksVis  = activeArea === "Todas" ? abertas : abertas.filter(t => t.area === activeArea);
 
   return (
@@ -169,6 +172,7 @@ export default function Dashboard() {
           area={drawer}
           tasks={tasks}
           clients={clients}
+          designMetrics={dm}
           edicaoMetrics={em}
           onClose={() => setDrawer(null)}
         />
@@ -180,20 +184,13 @@ export default function Dashboard() {
 
         {/* ── Header ── */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:32 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <img
-              src="https://lnzxjtzquxhxdlqqenjo.supabase.co/storage/v1/object/public/media/Grupo%20venda.png"
-              alt="Grupo Venda"
-              style={{ height:48, objectFit:"contain" }}
-            />
-            <div>
-              <div style={{ fontSize:13, letterSpacing:"0.2em", textTransform:"uppercase", color:"#4A9EFF", marginBottom:5 }}>
-                Grupo VENDA · Operations
-              </div>
-              <h1 style={{ fontSize:30, fontWeight:800, letterSpacing:"-0.02em", margin:0, color:"#fff" }}>
-                Painel de Controle
-              </h1>
+          <div>
+            <div style={{ fontSize:13, letterSpacing:"0.2em", textTransform:"uppercase", color:"#4A9EFF", marginBottom:5 }}>
+              Grupo VENDA · Operations
             </div>
+            <h1 style={{ fontSize:30, fontWeight:800, letterSpacing:"-0.02em", margin:0, color:"#fff" }}>
+              Painel de Controle
+            </h1>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             {updatedAt && <span style={{ fontSize:14, color:"#4A5060" }}>{updatedAt.toLocaleTimeString("pt-BR")}</span>}
@@ -213,60 +210,19 @@ export default function Dashboard() {
             borderRadius:10, padding:"10px 16px", marginBottom:12, fontSize:15, color:"#FCA5A5" }}>{a}</div>
         ))}
 
-        {loading ? (
-          <div style={{ textAlign:"center", color:"#8B95A5", padding:"100px 0", fontSize:18, fontWeight:500 }}>
-            Carregando dados operacionais...
+        {loadError && (
+          <div style={{ background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)",
+            borderRadius:10, padding:"10px 16px", marginBottom:12, fontSize:15, color:"#FCA5A5" }}>
+            Não consegui carregar os dados operacionais: {loadError}
           </div>
-        ) : loadError ? (
-          <div style={{ textAlign:"center", padding:"80px 0" }}>
-            <div style={{ color:"#EF4444", fontSize:16, marginBottom:16 }}>
-              Erro ao carregar dados: {loadError}
-            </div>
-            <button onClick={load} style={{ background:"rgba(74,158,255,0.12)", border:"1px solid rgba(74,158,255,0.3)",
-              color:"#4A9EFF", fontSize:14, padding:"8px 20px", borderRadius:20, cursor:"pointer" }}>
-              Tentar novamente
-            </button>
+        )}
+
+        {loading ? (
+          <div style={{ textAlign:"center", color:"#4A5060", padding:"100px 0", fontSize:16 }}>
+            Carregando dados operacionais...
           </div>
         ) : (
           <>
-            {/* ── Banner de Status Operacional (quando briefing carregado) ── */}
-            {briefing && (
-              <div style={{
-                display:"flex", alignItems:"center", gap:16, marginBottom:20,
-                background: `${briefing.statusColor}10`,
-                border: `1px solid ${briefing.statusColor}30`,
-                borderLeft: `4px solid ${briefing.statusColor}`,
-                borderRadius:12, padding:"14px 20px",
-                animation: briefing.status === "Situação Crítica" ? "pulse 3s infinite" : "none",
-              }}>
-                <ScoreRing score={briefing.score} color={briefing.statusColor} size={52} />
-                <div style={{ flex:1 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
-                    <span style={{ fontSize:13, fontWeight:700, color:briefing.statusColor,
-                      textTransform:"uppercase", letterSpacing:"0.1em" }}>{briefing.status}</span>
-                    <span style={{ fontSize:11, color:"#3A4055" }}>
-                      MAX · {new Date(briefing.generatedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}
-                    </span>
-                  </div>
-                  <p style={{ margin:0, fontSize:14, color:"#C5CAD8", lineHeight:1.4 }}>{briefing.summary}</p>
-                </div>
-                <button onClick={loadBriefing} disabled={briefingLoading}
-                  style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
-                    color: briefingLoading?"#2A3040":"#6B7280", fontSize:11, padding:"4px 10px",
-                    borderRadius:16, cursor: briefingLoading?"not-allowed":"pointer", flexShrink:0 }}>
-                  {briefingLoading ? "..." : "↻"}
-                </button>
-              </div>
-            )}
-            {!briefing && briefingLoading && (
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20,
-                background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)",
-                borderRadius:12, padding:"14px 20px", color:"#3A4055", fontSize:13 }}>
-                <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>
-                MAX analisando a operação...
-              </div>
-            )}
-
             {/* ── KPI Strip ── */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12, marginBottom:28 }}>
               <KPI label="Tasks abertas"     value={abertas.length}   color="#4A9EFF" />
@@ -276,12 +232,20 @@ export default function Dashboard() {
               <KPI label="Clientes ativos"   value={ativos.length}    color="#2DD4A0" />
             </div>
 
-            {/* ── MAX Briefing Completo ── */}
+            {/* ── MAX Briefing ── */}
             <BriefingCard briefing={briefing} loading={briefingLoading} onRefresh={loadBriefing} />
 
-            {/* ── Board Cards ── */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:28 }}>
-              {(["BU1","BU2","Design","Edição"] as AreaKey[]).map(area => {
+            {/* ── Board Cards — Unidades de Negócio ── */}
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase",
+                color:"#4A9EFF", padding:"3px 10px", borderRadius:20,
+                background:"rgba(74,158,255,0.1)", border:"1px solid rgba(74,158,255,0.2)" }}>
+                Unidades de Negócio
+              </div>
+              <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.05)" }}/>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }}>
+              {(["BU1","BU2","BU3","BU4"] as AreaKey[]).map(area => {
                 const bTasks   = abertas.filter(t => t.area === area);
                 const total    = bTasks.length;
                 const late     = bTasks.filter(t => t.sla?.includes("Atrasado")).length;
@@ -289,17 +253,8 @@ export default function Dashboard() {
                 const apr      = bTasks.filter(t => t.status?.includes("Aprovação") || t.status?.includes("Revisão Interna")).length;
                 const allArea  = tasks.filter(t => t.area === area);
                 const fechadas = allArea.filter(t => CLOSED.includes(t.status)).length;
-
-                // Design e Edição: usar métricas do depósito (tasks entregues saem da lista)
-                let pctFech: number;
-                if (area === "Design" && dmCurrent) {
-                  pctFech = dmCurrent.completionPct;
-                } else if (area === "Edição" && emCurrent) {
-                  pctFech = emCurrent.completionPct;
-                } else {
-                  const totalAll = allArea.length;
-                  pctFech = totalAll > 0 ? Math.round((fechadas / totalAll) * 100) : 0;
-                }
+                const totalAll = allArea.length;
+                const pctFech  = totalAll > 0 ? Math.round((fechadas / totalAll) * 100) : 0;
 
                 const statusCounts: Record<string, number> = {};
                 for (const t of bTasks) statusCounts[t.status] = (statusCounts[t.status] ?? 0) + 1;
@@ -369,12 +324,102 @@ export default function Dashboard() {
               })}
             </div>
 
+            {/* ── Board Cards — Produção ── */}
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase",
+                color:"#A78BFA", padding:"3px 10px", borderRadius:20,
+                background:"rgba(167,139,250,0.1)", border:"1px solid rgba(167,139,250,0.2)" }}>
+                Produção
+              </div>
+              <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.05)" }}/>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:16, marginBottom:24 }}>
+              {(["Design","Edição"] as AreaKey[]).map(area => {
+                const bTasks   = abertas.filter(t => t.area === area);
+                const total    = bTasks.length;
+                const late     = bTasks.filter(t => t.sla?.includes("Atrasado")).length;
+                const warn     = bTasks.filter(t => t.sla?.includes("Atenção")).length;
+                const apr      = bTasks.filter(t => t.status?.includes("Aprovação") || t.status?.includes("Revisão Interna")).length;
+                const allArea  = tasks.filter(t => t.area === area);
+                const fechadas = allArea.filter(t => CLOSED.includes(t.status)).length;
+
+                let pctFech: number;
+                if (area === "Design" && dmCurrent) {
+                  pctFech = dmCurrent.completionPct;
+                } else if (area === "Edição" && emCurrent) {
+                  pctFech = emCurrent.completionPct;
+                } else {
+                  const totalAll = allArea.length;
+                  pctFech = totalAll > 0 ? Math.round((fechadas / totalAll) * 100) : 0;
+                }
+
+                const statusCounts: Record<string, number> = {};
+                for (const t of bTasks) statusCounts[t.status] = (statusCounts[t.status] ?? 0) + 1;
+                const topStatuses = Object.entries(statusCounts).sort((a,b) => b[1]-a[1]).slice(0,4);
+                const { main, label, gestor } = BOARD[area];
+                return (
+                  <div key={area}
+                    onClick={() => setDrawer(area)}
+                    style={{ background:"#111318", border:"1px solid rgba(255,255,255,0.07)",
+                      borderRadius:18, padding:"20px", borderTop:`3px solid ${main}`,
+                      cursor:"pointer", transition:"border-color 0.15s, transform 0.12s",
+                      position:"relative" }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLDivElement).style.borderColor = main;
+                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
+                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                    }}
+                  >
+                    <div style={{ position:"absolute", top:14, right:16, fontSize:12,
+                      color:"#2A3040", letterSpacing:"0.06em" }}>VER DETALHES →</div>
+                    <div style={{ fontSize:13, fontWeight:700, letterSpacing:"0.12em",
+                      textTransform:"uppercase", color:main, marginBottom:4 }}>{label}</div>
+                    <div style={{ fontSize:14, color:"#4A5060", marginBottom:14 }}>{gestor}</div>
+                    <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:16 }}>
+                      <Ring pct={pctFech} color={main} size={70} />
+                      <div>
+                        <div style={{ fontSize:34, fontWeight:800, lineHeight:1, color:"#fff" }}>{total}</div>
+                        <div style={{ fontSize:13, color:"#4A5060", marginTop:3 }}>tasks abertas</div>
+                        <div style={{ fontSize:13, color:main, marginTop:2 }}>{pctFech}% concluídas</div>
+                      </div>
+                    </div>
+                    {topStatuses.map(([st, cnt]) => {
+                      const pct = total > 0 ? Math.round((cnt/total)*100) : 0;
+                      const c   = STATUS_COLOR[st] ?? "#6B7280";
+                      return (
+                        <div key={st} style={{ marginBottom:5 }}>
+                          <div style={{ display:"flex", justifyContent:"space-between",
+                            fontSize:12, color:"#6B7280", marginBottom:2 }}>
+                            <span style={{ maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{st}</span>
+                            <span style={{ color:c, fontWeight:600 }}>{cnt} · {pct}%</span>
+                          </div>
+                          <div style={{ height:2, background:"rgba(255,255,255,0.06)", borderRadius:2 }}>
+                            <div style={{ width:`${pct}%`, height:"100%", background:c, borderRadius:2 }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:12 }}>
+                      {late > 0 && <Badge color="#EF4444">{late} atrasada{late>1?"s":""}</Badge>}
+                      {warn > 0 && <Badge color="#F59E0B">{warn} atenção</Badge>}
+                      {apr  > 0 && <Badge color="#FBBF24">{apr} aprovação</Badge>}
+                      {late===0 && warn===0 && apr===0 && total>0 && <Badge color="#22C55E">no prazo</Badge>}
+                      {total===0 && <Badge color="#4A5060">sem tasks</Badge>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             {/* ── Production Metrics ── */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:28 }}>
               <ProdCard title="Design — Bruna Benevides" color="#A78BFA" current={dmCurrent}
                 history={[...dm].sort((a,b)=>b.month.localeCompare(a.month)).slice(0,6)}
                 onClick={() => setDrawer("Design")} />
-              <ProdCard title="Edição — Ana Laura" color="#F59E0B" current={emCurrent}
+              <ProdCard title="Edição — Samantha" color="#F59E0B" current={emCurrent}
                 history={[...em].sort((a,b)=>b.month.localeCompare(a.month)).slice(0,6)}
                 onClick={() => setDrawer("Edição")} />
             </div>
@@ -386,7 +431,7 @@ export default function Dashboard() {
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
                   <div style={{ fontSize:13, fontWeight:700, letterSpacing:"0.12em",
                     textTransform:"uppercase", color:"#4A5060" }}>Tasks em aberto</div>
-                  <div style={{ display:"flex", gap:6 }}>
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                     {areas.map(a => (
                       <button key={a} onClick={() => setActiveArea(a)} style={{
                         padding:"4px 12px", borderRadius:20, fontSize:14, cursor:"pointer",
@@ -489,7 +534,7 @@ export default function Dashboard() {
                       textTransform:"uppercase", color:"#4A5060" }}>Clientes</div>
                     <span style={{ fontSize:14, fontWeight:700, color:"#2DD4A0" }}>{ativos.length} ativos</span>
                   </div>
-                  {(["BU1","BU2"] as const).map(bu => {
+                  {(["BU1","BU2","BU3","BU4"] as const).map(bu => {
                     const lista = ativos.filter(c => c.bu === bu);
                     if (!lista.length) return null;
                     return (
@@ -521,7 +566,7 @@ export default function Dashboard() {
 
         <style>{`
           @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-          @keyframes spin{to{transform:rotate(360deg)}}
+          @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
           @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
           *{box-sizing:border-box}body{margin:0}
           ::-webkit-scrollbar{width:5px}
@@ -537,7 +582,7 @@ export default function Dashboard() {
 
 const SEVERITY_COLOR = { alta: "#EF4444", media: "#F59E0B", baixa: "#4A9EFF" };
 const AREA_COLOR: Record<string, string> = {
-  BU1: "#4A9EFF", BU2: "#2DD4A0", Design: "#A78BFA", "Edição": "#F59E0B",
+  BU1: "#4A9EFF", BU2: "#2DD4A0", BU3: "#F472B6", BU4: "#8B5CF6", Design: "#A78BFA", "Edição": "#F59E0B",
 };
 
 function ScoreRing({ score, color, size = 56 }: { score: number; color: string; size?: number }) {
@@ -668,9 +713,9 @@ function BriefingCard({ briefing, loading, onRefresh }: {
 
 // ─── Detail Drawer ────────────────────────────────────────────────────────────
 
-function DetailDrawer({ area, tasks, clients, edicaoMetrics, onClose }: {
+function DetailDrawer({ area, tasks, clients, designMetrics, edicaoMetrics, onClose }: {
   area: AreaKey; tasks: NocoTask[]; clients: Client[];
-  edicaoMetrics: MonthMetrics[];
+  designMetrics: MonthMetrics[]; edicaoMetrics: MonthMetrics[];
   onClose: () => void;
 }) {
   const { main, label, gestor } = BOARD[area];
@@ -681,7 +726,7 @@ function DetailDrawer({ area, tasks, clients, edicaoMetrics, onClose }: {
   const atencao   = abertas.filter(t => t.sla?.includes("Atenção"));
   const noCliente = abertas.filter(t => t.sla?.includes("No Prazo") || (!t.sla || t.sla==="—"));
 
-  const metrics = area === "Edição" ? edicaoMetrics : [];
+  const metrics = area === "Design" ? designMetrics : area === "Edição" ? edicaoMetrics : [];
   const mCurrent = [...metrics].sort((a,b) => b.month.localeCompare(a.month))[0];
 
   // Group tasks by status
@@ -692,8 +737,9 @@ function DetailDrawer({ area, tasks, clients, edicaoMetrics, onClose }: {
   }
 
   // BU-specific: tasks by client
+  const isBU = area === "BU1" || area === "BU2" || area === "BU3" || area === "BU4";
   const byClient: Record<string, NocoTask[]> = {};
-  if (area === "BU1" || area === "BU2") {
+  if (isBU) {
     for (const t of abertas) {
       const key = t.client || "—";
       if (!byClient[key]) byClient[key] = [];
@@ -762,7 +808,6 @@ function DetailDrawer({ area, tasks, clients, edicaoMetrics, onClose }: {
               .sort((a,b) => b[1].length - a[1].length)
               .map(([status, list]) => {
                 const c = STATUS_COLOR[status] ?? "#6B7280";
-                // always expanded in drawer
                 return (
                   <div key={status} style={{ marginBottom:14 }}>
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -786,7 +831,7 @@ function DetailDrawer({ area, tasks, clients, edicaoMetrics, onClose }: {
         )}
 
         {/* Tasks by client (BU only) */}
-        {(area === "BU1" || area === "BU2") && Object.keys(byClient).length > 0 && (
+        {isBU && Object.keys(byClient).length > 0 && (
           <Section title="Tasks por Cliente" color={main}>
             {Object.entries(byClient)
               .sort((a,b) => b[1].length - a[1].length)
@@ -1050,19 +1095,11 @@ function ProdCard({ title, color, current, history, onClick }: {
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
           <Ring pct={bar} color={barColor} size={88} />
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, width:"100%" }}>
-            <MiniStat label="Artes entregues" value={current.delivered}    color="#22C55E" />
-            <MiniStat label="Total artes"     value={current.totalPlanned} color={color} />
-            <MiniStat label="Aprovação"       value={current.inApproval}   color="#FBBF24" />
-            <MiniStat label="Revisão"         value={current.withRevision} color="#F97316" />
+            <MiniStat label="Entregues" value={current.delivered}    color="#22C55E" />
+            <MiniStat label="Total"     value={current.totalPlanned} color={color} />
+            <MiniStat label="Aprovação" value={current.inApproval}   color="#FBBF24" />
+            <MiniStat label="Revisão"   value={current.withRevision} color="#F97316" />
           </div>
-          {(current.uniqueTasks != null) && (
-            <div style={{ marginTop:8, padding:"6px 8px", background:"rgba(255,255,255,0.03)",
-              borderRadius:8, fontSize:12, color:"#4A5060", textAlign:"center" }}>
-              {current.uniqueDeliveredTasks ?? 0} tarefas únicas entregues
-              <span style={{ margin:"0 6px", opacity:0.4 }}>·</span>
-              {current.uniqueTasks} total
-            </div>
-          )}
         </div>
         <div>
           <div style={{ fontSize:13, color:"#4A5060", marginBottom:10 }}>{current.label}</div>
@@ -1095,7 +1132,7 @@ function ProdCard({ title, color, current, history, onClick }: {
           </div>
           <div style={{ marginTop:14, display:"flex", justifyContent:"space-between",
             fontSize:13, color:"#4A5060" }}>
-            <span>Artes/dia: <b style={{ color:"#8B909E" }}>{current.avgDailyProduction}</b></span>
+            <span>Média/dia: <b style={{ color:"#8B909E" }}>{current.avgDailyProduction}</b></span>
             <span>Pendentes: <b style={{ color:current.pending>0?"#F59E0B":"#4A5060" }}>{current.pending}</b></span>
           </div>
         </div>
