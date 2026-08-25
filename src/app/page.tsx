@@ -21,10 +21,11 @@ interface MonthMetrics {
   completionPct: number; avgDailyProduction: number;
   uniqueTasks?: number; uniqueDeliveredTasks?: number;
 }
+interface BusinessUnit { code: string; name: string; gestor: string; }
 interface Ctx {
   tasks: NocoTask[]; clients: Client[];
   designMetrics: MonthMetrics[]; edicaoMetrics: MonthMetrics[];
-  alerts: string[];
+  alerts: string[]; businessUnits: BusinessUnit[];
 }
 interface BriefingArea { name: string; score: number; note: string; }
 interface BriefingGargalo { severity: "alta" | "media" | "baixa"; text: string; }
@@ -34,7 +35,25 @@ interface Briefing {
   generatedAt: string;
 }
 
-type AreaKey = "BU1" | "BU2" | "BU3" | "BU4" | "Design" | "Edição";
+type AreaKey = string;
+type BoardEntry = { main: string; bg: string; label: string; gestor: string };
+type BoardMap = Record<string, BoardEntry>;
+
+// Cores por BU, na ordem em que elas chegam da API (já ordenadas por código) —
+// os 4 primeiros valores são os mesmos de sempre (BU1..BU4), então nada muda
+// visualmente pra elas; BUs novas (BU5 em diante) entram nas próximas da lista.
+const BU_PALETTE = ["#4A9EFF", "#2DD4A0", "#F472B6", "#8B5CF6", "#FBBF24", "#38BDF8", "#FB7185", "#34D399"];
+
+function buildBoard(businessUnits: BusinessUnit[]): BoardMap {
+  const board: BoardMap = {};
+  businessUnits.forEach((bu, i) => {
+    const color = BU_PALETTE[i % BU_PALETTE.length];
+    board[bu.code] = { main: color, bg: `${color}14`, label: bu.code, gestor: bu.gestor };
+  });
+  board["Design"] = { main: "#A78BFA", bg: "rgba(167,139,250,0.08)", label: "Design", gestor: "Bruna Benevides" };
+  board["Edição"] = { main: "#F59E0B", bg: "rgba(245,158,11,0.08)", label: "Edição", gestor: "Samantha" };
+  return board;
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -52,15 +71,6 @@ const STATUS_COLOR: Record<string, string> = {
   "✅ Entregue":        "#22C55E",
   "📦 Arquivo":         "#4A5060",
   "📦 Arquivado":       "#4A5060",
-};
-
-const BOARD: Record<AreaKey, { main: string; bg: string; label: string; gestor: string }> = {
-  BU1:    { main:"#4A9EFF", bg:"rgba(74,158,255,0.08)",   label:"BU1",    gestor:"Christian Castilhoni" },
-  BU2:    { main:"#2DD4A0", bg:"rgba(45,212,160,0.08)",   label:"BU2",    gestor:"Armando Cavazana" },
-  BU3:    { main:"#F472B6", bg:"rgba(244,114,182,0.08)",  label:"BU3",    gestor:"Bruna Benevides" },
-  BU4:    { main:"#8B5CF6", bg:"rgba(139,92,246,0.08)",   label:"BU4",    gestor:"Bruno Zanardo" },
-  Design: { main:"#A78BFA", bg:"rgba(167,139,250,0.08)",  label:"Design", gestor:"Bruna Benevides" },
-  Edição: { main:"#F59E0B", bg:"rgba(245,158,11,0.08)",   label:"Edição", gestor:"Samantha" },
 };
 
 const AGENTS = [
@@ -152,7 +162,11 @@ export default function Dashboard() {
   const dmCurrent = [...dm].filter(m => m.month <= thisMonth).sort((a,b) => b.month.localeCompare(a.month))[0];
   const emCurrent = [...em].filter(m => m.month <= thisMonth).sort((a,b) => b.month.localeCompare(a.month))[0];
 
-  const areas     = ["Todas","BU1","BU2","BU3","BU4","Design","Edição"];
+  // BUs vêm dinamicamente da API (gv_business_units) — nenhuma BU fica hardcoded
+  // aqui, então uma BU nova já aparece sozinha assim que existir no banco.
+  const businessUnits = ctx?.businessUnits ?? [];
+  const board         = buildBoard(businessUnits);
+  const areas          = ["Todas", ...businessUnits.map(b => b.code), "Design", "Edição"];
   const tasksVis  = activeArea === "Todas" ? abertas : abertas.filter(t => t.area === activeArea);
 
   return (
@@ -170,6 +184,7 @@ export default function Dashboard() {
       {drawer && ctx && (
         <DetailDrawer
           area={drawer}
+          board={board}
           tasks={tasks}
           clients={clients}
           designMetrics={dm}
@@ -244,8 +259,8 @@ export default function Dashboard() {
               </div>
               <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.05)" }}/>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }}>
-              {(["BU1","BU2","BU3","BU4"] as AreaKey[]).map(area => {
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:16, marginBottom:24 }}>
+              {businessUnits.map(({ code: area }) => {
                 const bTasks   = abertas.filter(t => t.area === area);
                 const total    = bTasks.length;
                 const late     = bTasks.filter(t => t.sla?.includes("Atrasado")).length;
@@ -260,7 +275,7 @@ export default function Dashboard() {
                 for (const t of bTasks) statusCounts[t.status] = (statusCounts[t.status] ?? 0) + 1;
                 const topStatuses = Object.entries(statusCounts).sort((a,b) => b[1]-a[1]).slice(0,4);
 
-                const { main, label, gestor } = BOARD[area];
+                const { main, label, gestor } = board[area];
 
                 return (
                   <div key={area}
@@ -356,7 +371,7 @@ export default function Dashboard() {
                 const statusCounts: Record<string, number> = {};
                 for (const t of bTasks) statusCounts[t.status] = (statusCounts[t.status] ?? 0) + 1;
                 const topStatuses = Object.entries(statusCounts).sort((a,b) => b[1]-a[1]).slice(0,4);
-                const { main, label, gestor } = BOARD[area];
+                const { main, label, gestor } = board[area];
                 return (
                   <div key={area}
                     onClick={() => setDrawer(area)}
@@ -468,8 +483,8 @@ export default function Dashboard() {
                           <td style={{ padding:"7px 8px 7px 0", color:"#E5E7EB",
                             maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{t.title}</td>
                           <td style={{ padding:"7px 8px" }}>
-                            <span style={{ color:BOARD[t.area as AreaKey]?.main??"#6B7280",
-                              background:BOARD[t.area as AreaKey]?.bg??"transparent",
+                            <span style={{ color:board[t.area]?.main??"#6B7280",
+                              background:board[t.area]?.bg??"transparent",
                               padding:"2px 7px", borderRadius:10, fontSize:13 }}>{t.area}</span>
                           </td>
                           <td style={{ padding:"7px 8px", color:"#6B7280",
@@ -534,12 +549,12 @@ export default function Dashboard() {
                       textTransform:"uppercase", color:"#4A5060" }}>Clientes</div>
                     <span style={{ fontSize:14, fontWeight:700, color:"#2DD4A0" }}>{ativos.length} ativos</span>
                   </div>
-                  {(["BU1","BU2","BU3","BU4"] as const).map(bu => {
+                  {businessUnits.map(({ code: bu }) => {
                     const lista = ativos.filter(c => c.bu === bu);
                     if (!lista.length) return null;
                     return (
                       <div key={bu} style={{ marginBottom:14 }}>
-                        <div style={{ fontSize:12, color:BOARD[bu].main, textTransform:"uppercase",
+                        <div style={{ fontSize:12, color:board[bu].main, textTransform:"uppercase",
                           letterSpacing:"0.1em", marginBottom:7, fontWeight:700 }}>{bu}</div>
                         {lista.map(c => (
                           <div key={c.name} style={{ padding:"5px 0",
@@ -713,12 +728,12 @@ function BriefingCard({ briefing, loading, onRefresh }: {
 
 // ─── Detail Drawer ────────────────────────────────────────────────────────────
 
-function DetailDrawer({ area, tasks, clients, designMetrics, edicaoMetrics, onClose }: {
-  area: AreaKey; tasks: NocoTask[]; clients: Client[];
+function DetailDrawer({ area, board, tasks, clients, designMetrics, edicaoMetrics, onClose }: {
+  area: AreaKey; board: BoardMap; tasks: NocoTask[]; clients: Client[];
   designMetrics: MonthMetrics[]; edicaoMetrics: MonthMetrics[];
   onClose: () => void;
 }) {
-  const { main, label, gestor } = BOARD[area];
+  const { main, label, gestor } = board[area];
   const allArea   = tasks.filter(t => t.area === area);
   const abertas   = allArea.filter(t => !CLOSED.includes(t.status));
   const fechadas  = allArea.filter(t => CLOSED.includes(t.status));
@@ -736,8 +751,8 @@ function DetailDrawer({ area, tasks, clients, designMetrics, edicaoMetrics, onCl
     byStatus[t.status].push(t);
   }
 
-  // BU-specific: tasks by client
-  const isBU = area === "BU1" || area === "BU2" || area === "BU3" || area === "BU4";
+  // BU-specific: tasks by client (qualquer área que não seja Design/Edição é uma BU)
+  const isBU = area !== "Design" && area !== "Edição";
   const byClient: Record<string, NocoTask[]> = {};
   if (isBU) {
     for (const t of abertas) {
